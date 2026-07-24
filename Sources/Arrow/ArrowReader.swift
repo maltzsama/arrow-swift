@@ -277,7 +277,7 @@ public class ArrowReader { // swiftlint:disable:this type_body_length
             streamData = input[offset...]
             var dataBuffer = ByteBuffer(
                 data: streamData,
-                allowReadingUnalignedBuffers: true
+                allowReadingUnalignedBuffers: useUnalignedBuffers
             )
             let message: org_apache_arrow_flatbuf_Message = getRoot(byteBuffer: &dataBuffer)
             switch message.headerType {
