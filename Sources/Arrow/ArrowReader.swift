@@ -282,11 +282,19 @@ public class ArrowReader { // swiftlint:disable:this type_body_length
             let message: org_apache_arrow_flatbuf_Message = getRoot(byteBuffer: &dataBuffer)
             switch message.headerType {
             case .recordbatch:
-                let rbMessage = message.header(type: org_apache_arrow_flatbuf_RecordBatch.self)!
+                guard let rbMessage = message.header(type: org_apache_arrow_flatbuf_RecordBatch.self) else {
+                    return .failure(.invalid("RecordBatch header not found"))
+                }
+                guard let schemaMsg = schemaMessage else {
+                    return .failure(.invalid("Schema must be defined before RecordBatch"))
+                }
+                guard let schema = result.schema else {
+                    return .failure(.invalid("Schema not loaded"))
+                }
                 let recordBatchResult = loadRecordBatch(
                     rbMessage,
-                    schema: schemaMessage!,
-                    arrowSchema: result.schema!,
+                    schema: schemaMsg,
+                    arrowSchema: schema,
                     data: input,
                     messageEndOffset: (Int64(offset) + Int64(length)))
                 switch recordBatchResult {
