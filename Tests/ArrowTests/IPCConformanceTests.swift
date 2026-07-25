@@ -59,24 +59,24 @@ private enum PrimitiveCase {
     /// used by testStreamAndFileAgree (currently disabled).
     /// Remove this when the test is re-enabled.
     /*
-    private static func snapshot(_ result: ArrowReader.ArrowReaderResult) -> [String] {
-        var values: [String] = []
-        for (batchIndex, batch) in result.batches.enumerated() {
-            for column in 0..<batch.columns.count {
-                let holder = batch.column(column)
-                for row in 0..<Int(batch.length) {
-                    let label = "b\(batchIndex)c\(column)r\(row)"
-                    if holder.array.asAny(UInt(row)) == nil {
-                        values.append("\(label)=nil")
-                    } else if let text = holder.array as? AsString {
-                        values.append("\(label)=\(text.asString(UInt(row)))")
-                    }
-                }
-            }
-        }
-        return values
-    }
-    */
+     private static func snapshot(_ result: ArrowReader.ArrowReaderResult) -> [String] {
+     var values: [String] = []
+     for (batchIndex, batch) in result.batches.enumerated() {
+     for column in 0..<batch.columns.count {
+     let holder = batch.column(column)
+     for row in 0..<Int(batch.length) {
+     let label = "b\(batchIndex)c\(column)r\(row)"
+     if holder.array.asAny(UInt(row)) == nil {
+     values.append("\(label)=nil")
+     } else if let text = holder.array as? AsString {
+     values.append("\(label)=\(text.asString(UInt(row)))")
+     }
+     }
+     }
+     }
+     return values
+     }
+     */
 }
 
 /// Reads IPC files from the `apache/arrow-testing` corpus, which are produced
@@ -171,6 +171,44 @@ final class IPCFileConformanceTests: XCTestCase {
             XCTAssertEqual(batch.columns.count, PrimitiveCase.fields.count)
         }
     }
+
+    /// A struct column and two top-level fields sharing the same name, read
+    /// from a file produced by another Arrow implementation.
+    ///
+    /// Only schema and shape are asserted. Value assertions are omitted
+    /// because fields carrying no validity buffer currently read
+    /// uninitialized memory, so their values differ between runs.
+    func testStructAndDuplicateFieldNames() throws {
+        let result = try readFile("generated_duplicate_fieldnames.arrow_file")
+
+        guard let schema = result.schema else {
+            XCTFail("schema is nil")
+            return
+        }
+        XCTAssertEqual(schema.fields.count, 3)
+        XCTAssertEqual(schema.fields[0].name, "ints")
+        XCTAssertEqual(schema.fields[0].type.id, .int8)
+        XCTAssertEqual(schema.fields[1].name, "ints")
+        XCTAssertEqual(schema.fields[1].type.id, .int32)
+        XCTAssertEqual(schema.fields[2].name, "struct")
+        XCTAssertEqual(schema.fields[2].type.id, .strct)
+
+        let structType = try XCTUnwrap(schema.fields[2].type as? ArrowTypeStruct)
+        XCTAssertEqual(structType.fields.count, 2)
+        XCTAssertEqual(structType.fields[0].type.id, .int32)
+        XCTAssertEqual(structType.fields[1].type.id, .string)
+
+        XCTAssertEqual(result.batches.count, 1)
+        let batch = result.batches[0]
+        XCTAssertEqual(batch.length, 1)
+        XCTAssertEqual(batch.columns.count, 3)
+
+        let nested = try XCTUnwrap(batch.column(2).array as? NestedArray)
+        let children = try XCTUnwrap(nested.fields)
+        XCTAssertEqual(children.count, 2)
+        XCTAssertEqual(children[0].type.id, .int32)
+        XCTAssertEqual(children[1].type.id, .string)
+    }
 }
 
 /// Reads IPC streams from the `apache/arrow-testing` corpus. The streaming
@@ -223,19 +261,19 @@ final class IPCStreamConformanceTests: XCTestCase {
     /// This test should pass once that issue is fixed and will serve as the
     /// regression test for it.
     /*
-    func testStreamAndFileAgree() throws {
-        let streamResult = try readStream("generated_primitive.stream")
+     func testStreamAndFileAgree() throws {
+     let streamResult = try readStream("generated_primitive.stream")
 
-        let fileURL = try ArrowTestData.url(
-            "\(PrimitiveCase.corpusPrefix)/generated_primitive.arrow_file")
-        guard case .success(let fileResult) = ArrowReader().fromFile(fileURL) else {
-            XCTFail("could not read generated_primitive.arrow_file")
-            return
-        }
+     let fileURL = try ArrowTestData.url(
+     "\(PrimitiveCase.corpusPrefix)/generated_primitive.arrow_file")
+     guard case .success(let fileResult) = ArrowReader().fromFile(fileURL) else {
+     XCTFail("could not read generated_primitive.arrow_file")
+     return
+     }
 
-        XCTAssertEqual(
-            PrimitiveCase.snapshot(streamResult),
-            PrimitiveCase.snapshot(fileResult))
-    }
-    */
+     XCTAssertEqual(
+     PrimitiveCase.snapshot(streamResult),
+     PrimitiveCase.snapshot(fileResult))
+     }
+     */
 }
