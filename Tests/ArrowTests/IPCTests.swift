@@ -293,7 +293,7 @@ final class IPCStreamReaderTests: XCTestCase {
             XCTAssertEqual(message.headerType, .schema)
 
             offset += Int(message.bodyLength + Int64(length))
-            let truncatedData = Data(writeData[offset...])
+            let truncatedData = writeData[offset...]
 
             let arrowReader = ArrowReader()
             switch arrowReader.readStreaming(truncatedData) {

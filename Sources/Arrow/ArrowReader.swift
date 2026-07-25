@@ -274,7 +274,7 @@ public class ArrowReader { // swiftlint:disable:this type_body_length
             }
 
             offset += Int(MemoryLayout<UInt32>.size)
-            streamData = input[offset...]
+            streamData = input[(input.startIndex + offset)...]
             var dataBuffer = ByteBuffer(
                 data: streamData,
                 allowReadingUnalignedBuffers: useUnalignedBuffers
