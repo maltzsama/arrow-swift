@@ -27,10 +27,8 @@ xcuserdata/
 # Docker
 /.docker/
 
-# Generated test fixtures (see ci/scripts/build.sh)
-/Tests/ArrowTests/testdata_*.arrow
+# Written by the file writer tests
 /Tests/ArrowTests/testfilewriter_*.arrow
-/data-generator/swift-datagen/testdata_*.arrow
 
 # Release Audit Tool
 /dev/release/apache-rat-*.jar
