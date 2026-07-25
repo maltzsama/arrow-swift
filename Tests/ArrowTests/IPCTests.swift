@@ -264,9 +264,9 @@ final class IPCStreamReaderTests: XCTestCase {
     }
 
     func testReadStreamingRecordBatchBeforeSchema() throws {
-    // Build a minimal streaming message: a RecordBatch header with no
-    // preceding Schema message. This should fail gracefully instead
-    // of crashing on a force unwrap.
+        // Build a minimal streaming message: a RecordBatch header with no
+        // preceding Schema message. This should fail gracefully instead
+        // of crashing on a force unwrap.
         let schema = makeSchema()
         let recordBatch = try makeRecordBatch()
         let arrowWriter = ArrowWriter()
